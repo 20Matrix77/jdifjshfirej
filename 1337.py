@@ -2,7 +2,7 @@ import sys
 import threading
 import requests
 import os
-from Queue import *
+from queue import *
 from threading import Thread
 
 ips = open(sys.argv[1], "r").readlines()
